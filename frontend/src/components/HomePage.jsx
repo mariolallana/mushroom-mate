@@ -19,9 +19,6 @@ function HomePage() {
       </div>
       <div style={{ marginTop: "5cm" }}></div>
       <HomePageThree />
-      <div style={{ marginTop: "5cm" }} className="flex flex-col items-center">
-      <LeafletMap />
-      </div>
       <div style={{ marginTop: "5cm" }}></div>
       <Footer />
     </div>

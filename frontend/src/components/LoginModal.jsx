@@ -8,17 +8,27 @@ function LoginModal({ isOpen, onClose }) {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // Check if the username and password match the criteria
-    if (username === "MARIO" && password === "1234") {
-      // Redirect to the PrivateArea page
-      navigate("/PrivateArea");
-    } else {
-      // You can show an error message or take other actions for invalid credentials
-      alert("Invalid credentials. Please try again.");
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        // Redirect to the PrivateArea page if login is successful
+        navigate("/PrivateArea");
+      } else {
+        // Handle invalid credentials
+        alert("Invalid credentials. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error logging in:", error);
     }
   };
-
   return (
     <div
       className={`fixed inset-0 flex items-center justify-center ${

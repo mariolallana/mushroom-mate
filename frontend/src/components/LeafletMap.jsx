@@ -1,4 +1,4 @@
-// InteractiveMap.js
+// InteractiveMap.jsx
 
 import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Circle, Popup } from "react-leaflet";
@@ -24,9 +24,8 @@ function InteractiveMap() {
 
   // Define a linear color scale
   const colorScale = scaleLinear()
-    .domain([0, 200]) // Input domain (total_prec values)
-    .range(["grey", "red"]); // Output range (colors)
-
+    .domain([0, 100]) // Input domain (total_prec values)
+    .range(["red", "green"]); // Output range (colors)
 
   return (
     <div className="relative w-full h-120 md:w-120 md:h-96 lg:w-120 lg:h-120 rounded-md overflow-hidden shadow-md z-10">
@@ -38,15 +37,19 @@ function InteractiveMap() {
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-      {weatherData.map((dataPoint, index) => (
-        <Circle
-          key={index}
-          center={[dataPoint.latitude, dataPoint.longitude]}
-          radius={5000} // 10 km radius
-          fillOpacity={0.5}
-          color={colorScale(dataPoint.total_prec)}
-        />
-      ))}
+        {weatherData.map((dataPoint, index) => (
+          <Circle
+            key={index}
+            center={[dataPoint.latitude, dataPoint.longitude]}
+            radius={5000} // 10 km radius
+            fillOpacity={0.5}
+            color={colorScale(dataPoint.total_prec)}
+          >
+            <Popup position={[dataPoint.latitude, dataPoint.longitude]}>
+              {`Location: ${dataPoint.nombre}, Total Precipitation: ${dataPoint.total_prec}`}
+            </Popup>
+          </Circle>
+        ))}
       </MapContainer>
     </div>
   );

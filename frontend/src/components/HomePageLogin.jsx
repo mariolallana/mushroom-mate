@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import LoginModal from "./LoginModal"; // Adjust the path as needed
+import LoginModal from "./LoginModal";
+import RegisterModal from "./RegisterModal";
 import { useNavigate } from "react-router-dom";
 
 function HomePageLogin() {
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
+  const [isRegisterModalOpen, setRegisterModalOpen] = useState(false); // State for RegisterModal
+
 
   const openLoginModal = () => {
     setLoginModalOpen(true);
@@ -11,6 +14,36 @@ function HomePageLogin() {
 
   const closeLoginModal = () => {
     setLoginModalOpen(false);
+  };
+
+  const openRegisterModal = () => {
+    setRegisterModalOpen(true);
+  };
+
+  const closeRegisterModal = () => {
+    setRegisterModalOpen(false);
+  };
+
+  const handleRegister = async (username, password) => {
+    // Send registration request to backend
+    try {
+      const response = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+      const data = await response.json();
+      console.log(data); // Handle the response from the server as needed
+      // Redirect user to login page or another page after successful registration
+      navigate("/login");
+    } catch (error) {
+      console.error("Error registering user:", error);
+    }
   };
 
   return (
@@ -38,11 +71,13 @@ function HomePageLogin() {
           className="justify-center items-stretch px-10 py-4 bg-green-800 rounded shadow-sm max-md:px-5"
           aria-label="Register"
           type="button"
+          onClick={openRegisterModal}
         >
           Register
         </button>
       </form>
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+      <RegisterModal isOpen={isRegisterModalOpen} onClose={closeRegisterModal} />
     </div>
   );
 }
