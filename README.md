@@ -23,9 +23,3 @@ Open CMD and run
 ```bash
 npm run dev
 ```
-
-or
-```bash
-my-react-app@0.0.0 dev
-vite
-```
