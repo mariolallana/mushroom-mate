@@ -17,7 +17,7 @@ function HomePage() {
       <div className="flex flex-col items-center">
       <HomePageLogin />
       </div>
-      <div style={{ marginTop: "5cm" }}></div>
+      <div style={{ marginTop: "1cm" }}></div>
       <HomePageThree />
       <div style={{ marginTop: "5cm" }}></div>
       <Footer />
