@@ -21,5 +21,9 @@ Run frontend:
 
 Open CMD and run 
 ```bash
+npm install
+
+npm start
+
 npm run dev
 ```
