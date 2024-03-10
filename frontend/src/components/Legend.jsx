@@ -25,14 +25,14 @@ const Legend = () => {
           className="h-4 w-full bg-gradient-to-r from-grey to-red rounded-lg"
           style={{
             backgroundImage: `linear-gradient(to right, ${colorScale(0)}, ${colorScale(
-              200
+              100
             )})`,
           }}
         ></div>
       </div>
       <div className="flex justify-between mt-2">
         <span className="text-sm text-gray-600">0</span>
-        <span className="text-sm text-gray-600">200</span>
+        <span className="text-sm text-gray-600">100</span>
       </div>
     </div>
   );

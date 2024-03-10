@@ -100,10 +100,10 @@ def check_recent_data():
     conn.close()
 
     # Check if the last date is more than 15 days ago for either table
-    if last_date_weather_data is not None and datetime.now() - last_date_weather_data > timedelta(days=15):
-        print("Warning: Last weather data is more than 15 days old.")
-    if last_date_grouped_data is not None and datetime.now() - last_date_grouped_data > timedelta(days=15):
-        print("Warning: Last grouped data is more than 15 days old.")
+    if last_date_weather_data is not None and datetime.now() - last_date_weather_data > timedelta(days=2):
+        print("Warning: Last weather data is more than 3 days old.")
+    if last_date_grouped_data is not None and datetime.now() - last_date_grouped_data > timedelta(days=2):
+        print("Warning: Last grouped data is more than 3 days old.")
 
 if __name__ == "__main__":
     # Step 1: Check and populate grouped table if necessary

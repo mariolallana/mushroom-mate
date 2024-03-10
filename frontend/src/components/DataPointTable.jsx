@@ -12,7 +12,7 @@ function DataPointTable({ dataPoints }) {
   console.log('Unique data points:', uniqueDataPoints); // Log unique data points
 
   // Define the columns to display and their order
-  const columns = ["Week", "nombre", "altitude", "total_pred", "media_diaria_prec"];
+  const columns = ["Week", "nombre", "altitude", "total_prec", "media_diaria_prec"];
 
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">
