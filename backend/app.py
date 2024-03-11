@@ -111,4 +111,7 @@ if __name__ == "__main__":
     # Step 2: Check if data is recent
     check_recent_data()
     # Step 3: Run the API
-    app.run(debug=True)
+    ## if you want to test locally:
+    #app.run(debug=True)
+    ## if you want to run dev on the host
+    app.run(host='0.0.0.0', debug=True)
