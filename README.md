@@ -22,6 +22,8 @@ Run frontend:
 Open CMD and run 
 ```bash
 npm install
+npm install react react-dom
+npm install -D vite-plugin-react @vitejs/plugin-react-refresh tailwindcss@latest postcss@latest autoprefixer@latest
 
 npm start
 
