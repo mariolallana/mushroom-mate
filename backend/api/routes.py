@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import sys
 
-api_routes = Blueprint('api_routes', __name__)
+api_routes = Blueprint('api_routes', __name__, url_prefix='/api')
 
 # Get the absolute path of the 'backend' directory
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

@@ -25,10 +25,12 @@ end_date = yesterday_str + 'T00%3A00%3A00UTC'
 station_ids = ['2462', '3111D','3266A','3110C'] 
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+#CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Register the blueprint
-app.register_blueprint(api_routes)
+#app.register_blueprint(api_routes)
+app.register_blueprint(api_routes, url_prefix='/api')
 
 # Function to create and return a SQLite connection
 def create_connection():

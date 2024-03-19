@@ -4,7 +4,7 @@ function LocationDropdown({ onLocationSelect }) {
   const [locations, setLocations] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/weather_data_grouped')
+    fetch('${process.env.REACT_APP_API_URL}/weather_data_grouped')
       .then(response => response.json())
       .then(data => {
         console.log('Fetched locations:', data); // Log fetched data

@@ -18,7 +18,7 @@ function PrivateArea() {
   // Function to fetch data points
   useEffect(() => {
     // Fetch data points from the server
-    fetch('http://localhost:5000/weather_data_grouped')
+    fetch('${process.env.REACT_APP_API_URL}/weather_data_grouped')
       .then(response => response.json())
       .then(data => {
         // Log the fetched data for verification
