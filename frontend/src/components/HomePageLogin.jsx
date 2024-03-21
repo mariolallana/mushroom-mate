@@ -27,7 +27,7 @@ function HomePageLogin() {
   const handleRegister = async (username, password) => {
     // Send registration request to backend
     try {
-      const response = await fetch(`${process.env.VITE_API_URL}/register`, {
+      const response = await fetch(`${process.env.VITE_API_URL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

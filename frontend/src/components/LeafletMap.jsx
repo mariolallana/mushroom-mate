@@ -12,7 +12,7 @@ function InteractiveMap() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${process.env.VITE_API_URL}/weather_data_grouped`);
+        const response = await axios.get(`${process.env.VITE_API_URL}/api/weather_data_grouped`);
         setWeatherData(response.data);
       } catch (error) {
         console.error("Error fetching weather data:", error);

@@ -18,7 +18,7 @@ function PrivateArea() {
   // Function to fetch data points
   useEffect(() => {
     // Fetch data points from the server
-    fetch(`${process.env.VITE_API_URL}/weather_data_grouped`)
+    fetch(`${process.env.VITE_API_URL}/api/weather_data_grouped`)
       .then(response => response.json())
       .then(data => {
         // Log the fetched data for verification
