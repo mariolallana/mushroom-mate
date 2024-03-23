@@ -7,6 +7,8 @@ function RegisterModal({ isOpen, onClose }) {
   const navigate = useNavigate();
 
   const handleRegister = async () => {
+    console.log("VITE_API_URL:", process.env.VITE_API_URL); // Verification step
+    
     // Send registration request to backend
     try {
       const response = await fetch(`${process.env.VITE_API_URL}/api/register`, {
