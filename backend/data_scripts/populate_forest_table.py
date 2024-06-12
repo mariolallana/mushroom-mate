@@ -91,7 +91,7 @@ def prepare_data(file_path):
     print(f"Time taken for elevation assignment: {time.time() - start_elevation_time} seconds")
 
     # Filter out rows where 'altitude' is less than 1000
-    gdf = gdf[gdf['altitude'] < 1000]
+    gdf = gdf[gdf['altitude'] > 2000]
 
     print(gdf[['tipo_id', 'tipo_desc', 'centroide_lat', 'centroide_lng', 'polygon', 'altitude', 'location_id']].head())
 
