@@ -1,0 +1,7 @@
+requests==2.31.0
+pandas==1.3.3
+numpy==1.21.3
+flask==3.0.2
+flask_cors==4.0.0
+tabulate==0.9.0
+opencage==2.4.0
