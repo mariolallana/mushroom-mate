@@ -16,8 +16,8 @@ from api.controllers.models import ForestModel
 from api.controllers.db_config import mysql_params
 
 # Límites aproximados de la Comunidad de Madrid en EPSG:4326
-min_lat, max_lat = 40.3123, 40.9688
-min_lon, max_lon = -4.2914, -3.1625
+min_lat, max_lat = 39.90578228589034, 41.161733975841756
+min_lon, max_lon = -4.5763664094590535, -3.0709048477353535
 
 # Distancia entre puntos en grados (aproximadamente 500 metros)
 lat_diff = 0.0045

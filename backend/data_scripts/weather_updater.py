@@ -1,4 +1,3 @@
-# import sqlite3
 import mysql.connector
 import pandas as pd
 from datetime import datetime, timedelta
@@ -18,14 +17,11 @@ sys.path.append(backend_dir)
 from api.controllers.models import ForestModel
 from api.controllers.db_config import mysql_params 
 
-# Database path
-#DB_PATH = 'forest_data.db'
-
 def get_next_weather_id(conn):
     cursor = conn.cursor()
     cursor.execute('SELECT MAX(weather_id) FROM weather')
     result = cursor.fetchone()
-    return (result[0] or 0) + 1
+    return (int(result[0]) if result[0] else 0) + 1
 
 def fetch_weather_data(lat, lon, start_date, end_date):
     """Fetch historical weather data for the given coordinates and date range."""
@@ -59,7 +55,6 @@ def fetch_weather_data(lat, lon, start_date, end_date):
 
     return weather_data
 
-
 def get_last_inserted_date(conn):
     """Fetch the latest date from the weather table."""
     logging.info("Retrieving the last inserted weather data date.")
@@ -77,7 +72,7 @@ def update_weather_table():
     db_model = ForestModel(mysql_params)
 
     last_inserted_date = get_last_inserted_date(conn)
-    start_date = datetime.strptime(last_inserted_date, '%Y-%m-%d') + timedelta(days=1) if last_inserted_date else datetime.today() - timedelta(days=90)
+    start_date = datetime.strptime(last_inserted_date.strftime('%Y-%m-%d'), '%Y-%m-%d') + timedelta(days=1) if last_inserted_date else datetime.today() - timedelta(days=15)
     end_date = datetime.today()
 
     logging.info(f"Updating weather data from {start_date} to {end_date}.")

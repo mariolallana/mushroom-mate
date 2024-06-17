@@ -78,12 +78,12 @@ def start_scheduled_daily_data_update():
 
 if __name__ == "__main__":
     # Step 1: Check and populate forest table if necessary
-    check_and_populate()
+    #check_and_populate()
     # populate species table
-    populate_mushroom_species_table()
+    #populate_mushroom_species_table()
     # populate forest table
     # Start the weather update scheduler
-    ###########33start_scheduled_daily_data_update()
+    start_scheduled_daily_data_update()
     # update_weather_table()
     ###########33update_probabilities()
     #populate_forest_table()
