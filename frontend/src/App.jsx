@@ -5,6 +5,8 @@ import './App.css';
 import './tailwind.css';
 import HomePage from './components/HomePage';
 import PrivateArea from './components/PrivateArea';
+import MushSpotExchange from './components/MushSpotExchange';
+import Contact from './components/Contact';
 
 import { Chart, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
@@ -16,7 +18,9 @@ function App() {
     <ErrorBoundary>
       <Routes>
         <Route path="*" element={<HomePage />} />
-        <Route path="/PrivateArea" element={<PrivateArea />} />
+        <Route path="/mush-finder" element={<PrivateArea />} />
+        <Route path="/mush-spot-exchange" element={<MushSpotExchange />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </ErrorBoundary>
   );

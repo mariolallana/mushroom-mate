@@ -5,23 +5,20 @@ import mysql.connector
 import sqlalchemy
 import sys
 import os
+from typing import List, Dict, Any
 
 # Get the absolute path of the 'backend' directory
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the 'backend' directory to sys.path
 sys.path.append(backend_dir)
 
-from api.controllers.db_config import mysql_params 
+from api.controllers.db_config import connection_pool
+from data_scripts.database_utils import get_connection, get_sqlalchemy_engine, close_connection
 
-# Database path
-#DB_PATH = 'forest_data.db'
+import logging
 
-def get_connection():
-    return mysql.connector.connect(**mysql_params)
-
-def get_sqlalchemy_engine():
-    connection_string = f"mysql+mysqlconnector://{mysql_params['user']}:{mysql_params['password']}@{mysql_params['host']}:{mysql_params['port']}/{mysql_params['database']}"
-    return sqlalchemy.create_engine(connection_string)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def fetch_recent_weather(location_id):
     engine = get_sqlalchemy_engine()
@@ -39,37 +36,37 @@ def fetch_recent_weather(location_id):
 def fetch_mushroom_species(tipo_bosque_id):
     engine = get_sqlalchemy_engine()
     query = '''
-        SELECT specie_id, specie_name, temp_min, temp_max, prec_acc_min, prec_acc_max, altura_min, altura_optima_min, altura_optima_max
+        SELECT specie_id, specie_name, temp_min, temp_max, prec_acc_min, prec_acc_max, altura_optima_min, altura_optima_max, altura_max
         FROM mushroom_species
         WHERE tipo_bosque_id = %s
     '''
+    #logger.info(f"Executing query: {query} with tipo_bosque_id: {tipo_bosque_id}")
     df = pd.read_sql(query, engine, params=(tipo_bosque_id,))
+    #logger.info(f"Query result: {df}")
     return df
 
 def fetch_location_altitude(location_id):
     """Fetch the altitude for a given location_id from the database."""
     conn = get_connection()
-    query = 'SELECT altitude, tipo_id FROM forest WHERE location_id = %s'
-    cursor = conn.cursor()
-    cursor.execute(query, (location_id,))
-    results = cursor.fetchall()  # Consume todos los resultados
-    cursor.close()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        query = 'SELECT altitude, tipo_id FROM forest WHERE location_id = %s'
+        cursor.execute(query, (location_id,))
+        results = cursor.fetchall()
 
-    if not results:
-        raise ValueError(f"No data found for location_id: {location_id}")
+        if not results:
+            raise ValueError(f"No data found for location_id: {location_id}")
 
-    if len(results[0]) != 2:
-        raise ValueError(f"Unexpected number of columns returned for location_id {location_id}: {results[0]}")
+        if len(results[0]) != 2:
+            raise ValueError(f"Unexpected number of columns returned for location_id {location_id}: {results[0]}")
 
-    altitude, tipo_bosque_id = results[0]
-    
-    #if altitude is None:
-    #    raise ValueError(f"Altitude is None for location_id: {location_id}")
-    
-    return float(altitude), tipo_bosque_id
+        altitude, tipo_bosque_id = results[0]
+        return float(altitude), tipo_bosque_id
+    finally:
+        cursor.close()
+        close_connection(conn)
 
-def calculate_probabilities(location_id):
+def calculate_probabilities(location_id: str) -> List[Dict[str, Any]]:
     try:
         location_altitude, tipo_bosque_id = fetch_location_altitude(location_id)
     except ValueError as e:
@@ -89,7 +86,7 @@ def calculate_probabilities(location_id):
 
     for _, specie in mushroom_species.iterrows():
         # Altitude check
-        if not (specie['altura_min'] <= location_altitude <= specie['altura_optima_max']):
+        if not (specie['altura_optima_min'] <= location_altitude <= specie['altura_optima_max']):
             probability = "0 probabilities"
             results.append({"specie_name": specie['specie_name'], "probability": probability})
             continue
@@ -135,6 +132,6 @@ def calculate_probabilities(location_id):
 
 
 if __name__ == '__main__':
-    location_id = "40.62456834443036_-4.160302287811402"  # Example ID
+    location_id = "4991328.055944796_-415861.93555245845"  # Example ID
     probabilities = calculate_probabilities(location_id)
     print(probabilities)

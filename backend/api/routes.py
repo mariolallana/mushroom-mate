@@ -138,7 +138,16 @@ def get_forest_data():
 def get_forest_data():
     conn = create_connection_forest()
     try:
-        query = 'SELECT * FROM forest'
+        query = """
+            SELECT * FROM forest fa
+            WHERE EXISTS (
+                SELECT * 
+                FROM weather ed 
+                WHERE fa.location_id = ed.location_id
+                )
+                AND tipo_id = 21
+            ;
+            """
         print("Executing query:", query)
         result_df = pd.read_sql(query, conn)
         print("Query executed successfully. Number of records fetched:", len(result_df))
@@ -274,7 +283,11 @@ def get_mushroom_species_probabilities():
     conn = create_connection_forest()
     try:
         query = '''
-        SELECT ms.specie_id, ms.specie_name, ms.temp_min, ms.temp_max, ms.prec_acc_min, ms.prec_acc_max, ms.altura_min, ms.altura_optima_min, ms.altura_optima_max, mp.probability
+        SELECT 
+            ms.specie_id, ms.specie_name, ms.temp_min, 
+            ms.temp_max, ms.prec_acc_min, ms.prec_acc_max, 
+            ms.altura_max, ms.altura_optima_min, 
+            ms.altura_optima_max, mp.probability
         FROM mushroom_species ms
         LEFT JOIN mushroom_probabilities mp ON ms.specie_id = mp.specie_id
         WHERE ms.tipo_bosque_id = %s

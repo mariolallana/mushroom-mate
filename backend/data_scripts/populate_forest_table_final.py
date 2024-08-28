@@ -5,6 +5,11 @@ import sys
 import os
 import pandas as pd
 from scipy.spatial import cKDTree
+from tqdm import tqdm  # Import tqdm
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Get the absolute path of the 'backend' directory
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -14,16 +19,18 @@ sys.path.append(backend_dir)
 from api.controllers.models import ForestModel
 from api.controllers.db_config import mysql_params
 
-def generate_forest_id(location_id):
-    """Generate a unique weather_id based on location_id and date using MD5."""
-    unique_string = f"{location_id}"
-    return hashlib.md5(unique_string.encode()).hexdigest()
 
-def fetch_elevations_from_db(db_model):
-    """Fetch all elevation data from the database."""
+def fetch_elevations_from_db(db_model, chunk_size=100000):
+    """Fetch elevation data from the database in chunks."""
     query = "SELECT latitude, longitude, altitude FROM elevation_data"
-    result = db_model.execute_query(query)
-    return pd.DataFrame(result, columns=['latitude', 'longitude', 'altitude'])
+    offset = 0
+    while True:
+        chunk_query = f"{query} LIMIT {chunk_size} OFFSET {offset}"
+        chunk = pd.DataFrame(db_model.execute_query(chunk_query), columns=['latitude', 'longitude', 'altitude'])
+        if chunk.empty:
+            break
+        yield chunk
+        offset += chunk_size
 
 def assign_elevation_to_locations(locations, elevation_data):
     """Assign the nearest elevation to each location using KDTree for fast lookup."""
@@ -37,59 +44,62 @@ def populate_forest_table():
     try:
         # Initialize the model with the path to the database
         db_model = ForestModel(mysql_params)
-            # Create the auxiliary table
+        # Create the auxiliary table
         db_model.create_forest()
 
         # Fetch data from the auxiliary table
         aux_data = db_model.fetch_aux_data()
-
-        print(f"Fetched {len(aux_data)} records from the auxiliary table.")
+        logging.info(f"Fetched {len(aux_data)} records from the auxiliary table.")
 
         if not aux_data.empty:
-            # Fetch all elevation data from the database
-            elevation_data = fetch_elevations_from_db(db_model)
-            print(f"Fetched {len(elevation_data)} records from the elevation_data table.")
-
-            # Assign elevations to centroids
-            start_elevation_time = time.time()
             locations = aux_data[['centroide_lat_wgs84', 'centroide_lng_wgs84']].values
-            aux_data['altitude'] = assign_elevation_to_locations(locations, elevation_data)
-            print("Asignación de datos de elevación realizada.")
-            print(f"Time taken for elevation assignment: {time.time() - start_elevation_time} seconds")
+            aux_data['altitude'] = 0  # Initialize altitude column
 
-            # Filter out rows where 'altitude' is less than 2000
+            for elevation_chunk in fetch_elevations_from_db(db_model):
+                chunk_locations = elevation_chunk[['latitude', 'longitude']].values
+                chunk_altitudes = assign_elevation_to_locations(locations, elevation_chunk)
+                aux_data.loc[aux_data['altitude'] == 0, 'altitude'] = chunk_altitudes
+
+            logging.info("Elevation assignment completed.")
+
+            # Filter out rows where 'altitude' is less than 800m
             aux_data = aux_data[aux_data['altitude'] > 800]
+            logging.info(f"{len(aux_data)} records remain after altitude filtering.")
 
             if not aux_data.empty:
-                start_insertion_time = time.time()
                 data_tuples = [
                     (
-                        generate_forest_id(row['location_id']),
+                        row['location_id'],
                         row['tipo_id'],
                         row['tipo_desc'],
                         row['centroide_lat_wgs84'],
                         row['centroide_lng_wgs84'],
-                        row['polygon'],  # Assuming this is already in WKT
+                        row['polygon'],
                         row['altitude'],
-                        row['location_id']
                     )
                     for _, row in aux_data.iterrows() if row['polygon'] is not None
                 ]
-                db_model.insert_forest_bulk(data_tuples, batch_size=100)  # Ajusta el tamaño del lote según sea necesario
-                print("Data inserted successfully.")
-                print(f"Time taken for insertion: {time.time() - start_insertion_time} seconds")
+
+                logging.info(f"Sample data tuple: {data_tuples[0] if data_tuples else 'No data'}")
+                logging.info(f"Number of fields in data tuple: {len(data_tuples[0]) if data_tuples else 0}")
+
+                for batch_start in tqdm(range(0, len(data_tuples), 100), desc='Inserting data', unit='batch'):
+                    batch = data_tuples[batch_start:batch_start + 100]
+                    db_model.insert_forest_bulk(batch, batch_size=100)  # Adjust the batch size as necessary
+
+                logging.info("Data inserted successfully.")
             else:
-                print("No data to insert after altitude filtering.")
+                logging.warning("No data to insert after altitude filtering.")
         else:
-            print("No data to insert from auxiliary table.")
+            logging.warning("No data to insert from auxiliary table.")
     except mysql.connector.Error as e:
-        print(f"Error while connecting or manipulating the database: {e}")
+        logging.error(f"Error while connecting or manipulating the database: {e}")
     finally:
         # Close the database connection if it was initialized
         if db_model and db_model.conn.is_connected():
             db_model.conn.close()
 
-    print(f"Total time taken: {time.time() - start_time} seconds")
+    logging.info(f"Total time taken: {time.time() - start_time} seconds")
 
 if __name__ == '__main__':
     populate_forest_table()

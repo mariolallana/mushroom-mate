@@ -9,7 +9,7 @@ import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
 from data_scripts.weather_updater import update_weather_table
 from data_scripts.update_mushroom_prob_table import update_probabilities
-from data_scripts.populate_forest_table import populate_forest_table
+# from data_scripts.populate_forest_table import populate_forest_table
 from data_scripts.populate_mushroom_species_table import populate_mushroom_species_table
 
 from api.routes import api_routes
@@ -56,11 +56,11 @@ def check_and_populate():
         cursor.execute('SELECT COUNT(*) FROM forest')
         forest_data_count = cursor.fetchone()[0]
 
-        if forest_data_count == 0:
-            print("Forest table is empty. Populating forest table.")
-            populate_forest_table()
-        else:
-            print("Forest table has data.")
+        # if forest_data_count == 0:
+        #     print("Forest table is empty. Populating forest table.")
+        #     populate_forest_table()
+        # else:
+        #     print("Forest table has data.")
     except mysql.connector.Error as e:
         print(f"Error checking or populating forest table: {e}")
     finally:
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     #populate_mushroom_species_table()
     # populate forest table
     # Start the weather update scheduler
-    start_scheduled_daily_data_update()
+    #start_scheduled_daily_data_update()
     # update_weather_table()
     ###########33update_probabilities()
     #populate_forest_table()

@@ -1,92 +1,88 @@
-#import sqlite3
-import mysql.connector
-import pandas as pd
-from datetime import datetime
 import sys
 import os
+import logging
+from rich.logging import RichHandler
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn, TextColumn
 
-# Get the absolute path of the 'backend' directory
+# Add 'backend' directory to sys.path
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# Add the 'backend' directory to sys.path
 sys.path.append(backend_dir)
 
+from api.controllers.models import ForestModel
+from api.controllers.db_config import mysql_params
 from data_scripts.mushroom_probability_calculation import calculate_probabilities
 
-from api.controllers.models import ForestModel
-from api.controllers.db_config import mysql_params 
+# Setup rich logging and console
+console = Console()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',
+    datefmt="[%X]",
+    handlers=[RichHandler(console=console)]
+)
+logger = logging.getLogger("rich")
 
+# Fetch location IDs and mushroom species using ForestModel
+def fetch_data():
+    with ForestModel(mysql_params) as db_model:
+        locations = db_model.execute_query("SELECT location_id FROM forest WHERE tipo_id = 21")
+        mushrooms = db_model.fetch_all_mushroom_species()
+    return [loc['location_id'] for loc in locations], mushrooms
 
-# Database path
-#DB_PATH = 'forest_data.db'
-
-def get_connection():
-    return mysql.connector.connect(**mysql_params)
-
-def fetch_locations():
-    conn = get_connection()
-    query = '''
-        SELECT location_id
-        FROM forest
-    '''
-    df = pd.read_sql(query, conn)
-    conn.close()
-    return df['location_id'].astype(str).tolist()
-
-def fetch_mushroom_species():
-    conn = get_connection()
-    query = '''
-        SELECT specie_id, specie_name
-        FROM mushroom_species
-    '''
-    df = pd.read_sql(query, conn)
-    conn.close()
-    mushroom_list = df.to_dict('records')  # Convert DataFrame to a list of dictionaries
-    print("Fetched mushroom species:", mushroom_list)  # Debugging output
-    return mushroom_list
-
-
-def update_probabilities():
-    conn = get_connection()
-    locations = fetch_locations()
-    mushrooms = fetch_mushroom_species()
-
-    db_model = ForestModel(mysql_params)
-    db_model.drop_mushroom_probability_table()
-    db_model.create_mushroom_probability()
-
+# Process a single location to calculate probabilities and prepare records
+def process_location_batch(locations, mushrooms):
+    results = []
     for location_id in locations:
         probabilities = calculate_probabilities(location_id)
-        if probabilities:
-            for probability_info in probabilities:
-                if isinstance(probability_info, dict):
-                    if 'error' in probability_info:
-                        print(f"Error for location {location_id}: {probability_info['error']}")
-                        continue  
+        for prob_info in probabilities:
+            if isinstance(prob_info, dict) and 'error' not in prob_info:
+                specie_id = next((m['specie_id'] for m in mushrooms if m['specie_name'] == prob_info.get('specie_name')), None)
+                if specie_id:
+                    results.append((location_id, specie_id, prob_info.get('probability')))
+    return results
 
-                    specie_id = next((m['specie_id'] for m in mushrooms if m['specie_name'] == probability_info.get('specie_name')), None)
-                    if specie_id:
-                        db_model.update_probability_record(location_id, specie_id, probability_info.get('probability'))
-                else:
-                    print(f"Unexpected data format: {probability_info}")    
+# Update mushroom probabilities in the database
+def update_probabilities(batch_size=100):
+    locations, mushrooms = fetch_data()
 
-    conn.close()
-    print("Mushroom prob table update completed.")
+    with ForestModel(mysql_params) as db_model:
+        db_model.create_mushroom_probabilities_table()
 
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.1f}%"),
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task("[cyan]Processing Locations...", total=len(locations))
 
+            for i in range(0, len(locations), batch_size):
+                batch = locations[i:i+batch_size]
+                try:
+                    results = process_location_batch(batch, mushrooms)
+                    if results:
+                        db_model.batch_update_probability_records(results)
+                    progress.advance(task, len(batch))
+                except Exception as e:
+                    logger.error(f"[red]Error processing batch starting with location {batch[0] if batch else 'unknown'}: {str(e)}[/red]", exc_info=True)
 
+    logger.info("[bold cyan]Mushroom probabilities update completed.[/bold cyan]")
+
+# Print the first 10 records from the mushroom_probabilities table
 def print_first_ten_probabilities():
-    conn = get_connection()
-    query = '''
-        SELECT * FROM mushroom_probabilities
-        ORDER BY last_updated DESC
-        LIMIT 10
-    '''
-    df = pd.read_sql(query, conn)
-    conn.close()
-    print("First 10 entries in mushroom_probabilities:")
-    print(df)
-
+    with ForestModel(mysql_params) as db_model:
+        results = db_model.execute_query("SELECT * FROM mushroom_probabilities ORDER BY last_updated DESC LIMIT 10")
+        console.print("[bold yellow]First 10 entries in mushroom_probabilities:[/bold yellow]")
+        for row in results:
+            console.print(row)
 
 if __name__ == '__main__':
-    update_probabilities()
-    print_first_ten_probabilities()
+    try:
+        update_probabilities()
+        print_first_ten_probabilities()
+    except Exception as e:
+        logger.critical(f"[bold red]Critical error in main execution: {str(e)}[/bold red]", exc_info=True)
